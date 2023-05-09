@@ -13,17 +13,13 @@ class Logger {
 
   showProgress(current) {
     this.progress.current = current;
-    const progressPercent = Math.round(
-      (current / this.progress.noRecords) * 100
-    );
-    const currentBarLength = Math.round(
-      (progressPercent / 100) * MAX_PROGRESS_BAR_LENGTH
-    );
+    const progress = current / this.progress.noRecords;
+    const currentBarLength = Math.round(progress * MAX_PROGRESS_BAR_LENGTH);
     const emptyBarSpace = MAX_PROGRESS_BAR_LENGTH - currentBarLength;
 
     const progressBar = `[${"=".repeat(currentBarLength)}${
       currentBarLength != MAX_PROGRESS_BAR_LENGTH ? ">" : ""
-    }${" ".repeat(emptyBarSpace)}] ${progressPercent.toFixed(2)}%\n`;
+    }${" ".repeat(emptyBarSpace)}] ${(progress * 100).toFixed(2)}%\n`;
     this.progress.bar = progressBar;
 
     process.stdout.write(progressBar);
