@@ -11,8 +11,23 @@ const WIKI_HERBS_LIST_URI =
   const wikiHerbsRes = await axios.get(WIKI_HERBS_LIST_URI);
   const $ = cheerio.load(wikiHerbsRes.data);
   const links = $(".mw-parser-output > ul > li > a");
+  const linksKeys = Object.keys(links);
   const logger = new Logger(links.length);
 
   logger.log(`Found ${links.length} wiki links...`);
   logger.log("Starting scrapping procedure...");
+  logger.log("");
+
+  for (const prop in links) {
+    const current = linksKeys.indexOf(prop);
+    const hrefRegex = new RegExp("/wiki/*");
+    const link = links[prop].attribs;
+
+    if (hrefRegex.test(link?.href)) {
+      const wikiPageUri = `${WIKI_API_URI}/page/html/${link.href.replace(
+        "/wiki/",
+        ""
+      )}`;
+    }
+  }
 })();
