@@ -24,10 +24,19 @@ const WIKI_HERBS_LIST_URI =
     const link = links[prop].attribs;
 
     if (hrefRegex.test(link?.href)) {
+      logger.showProgress(current + 1);
+      logger.log(`Loading HTML content for WIKI page: "${link.title}"`);
       const wikiPageUri = `${WIKI_API_URI}/page/html/${link.href.replace(
         "/wiki/",
         ""
       )}`;
+
+      const pageHTML = await axios.get(wikiPageUri);
+      const $ = cheerio.load(pageHTML.data);
+
+      const pageHeader = $(`p:contains("${link.title}")`);
     }
   }
+
+  logger.log(logger.progress.bar);
 })();
