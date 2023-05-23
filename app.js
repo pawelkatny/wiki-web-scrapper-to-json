@@ -3,7 +3,7 @@ const cheerio = require("cheerio");
 const Logger = require("./helpers/logger");
 
 const DATA_DIR = "data";
-const WIKI_API_URI = "https://pl.wikipedia.org/api/rest_v1";
+const WIKI_API_URI = "https://pl.wikipedia.org/wiki";
 const WIKI_HERBS_LIST_URI =
   "https://pl.wikipedia.org/wiki/Lista_ro%C5%9Blin_leczniczych";
 
@@ -26,17 +26,62 @@ const WIKI_HERBS_LIST_URI =
     if (hrefRegex.test(link?.href)) {
       logger.showProgress(current + 1);
       logger.log(`Loading HTML content for WIKI page: "${link.title}"`);
-      const wikiPageUri = `${WIKI_API_URI}/page/html/${link.href.replace(
-        "/wiki/",
-        ""
-      )}`;
+      const wikiPageUri = `${WIKI_API_URI}/${link.href.replace("/wiki/", "")}`;
 
       const pageHTML = await axios.get(wikiPageUri);
+
       const $ = cheerio.load(pageHTML.data);
 
-      const pageHeader = $(`p:contains("${link.title}")`);
+      let parsedData = {
+        title: link.title,
+        pageHeader: "",
+        paragraphs: {},
+      };
+
+      const pageHeader = $(`p:contains("${link.title}")`).text();
+      parsedData.pageHeader = pageHeader;
+
+      parsedData.paragraphs = {};
+      const container = $("div.mw-parser-output").contents();
+      const paragraphs = $("div.mw-parser-output > h2");
+
+      paragraphs.each((i, ele) => {
+        const paragraphTitle = $(ele.firstChild)
+          .text()
+          .replace("/[^a-zA-Z]/g", "");
+
+        if (
+          ["Przypisy", "Bibliografia", "Linki zewnętrzne", ""].includes(
+            paragraphTitle
+          )
+        )
+          return;
+
+        parsedData.paragraphs[paragraphTitle] = {};
+        parsedData = getParagraphDataRecursive(
+          $,
+          ele,
+          parsedData,
+          paragraphTitle,
+          container
+        );
+      });
     }
   }
 
   logger.log(logger.progress.bar);
 })();
+
+const getParagraphDataRecursive = ($, ele, parsedData, title, container) => {
+  const e = $(ele).next();
+  const text = e.text();
+  const eleName = e["0"].name;
+
+  if (eleName == "h2" || eleName == "undefined") return parsedData;
+
+  parsedData.paragraphs[title][eleName] = {
+    text: text,
+  };
+
+  return getParagraphDataRecursive($, e, parsedData, title, container);
+};
