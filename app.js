@@ -19,19 +19,16 @@ const WIKI_HERBS_LIST_URI =
   logger.log(`Found ${links.length} wiki links...`);
   logger.log("Starting scrapping procedure...");
   logger.log("");
-  let counter = 0;
+
   for (const prop in links) {
     const current = linksKeys.indexOf(prop);
     const hrefRegex = new RegExp("/wiki/*");
     const link = links[prop].attribs;
 
     if (hrefRegex.test(link?.href)) {
-      if (counter >= 1) return;
-      counter++;
       logger.showProgress(current + 1);
       logger.log(`Loading HTML content for WIKI page: "${link.title}"`);
       const wikiPageUri = `${WIKI_API_URI}/${link.href.replace("/wiki/", "")}`;
-
       const pageHTML = await axios.get(wikiPageUri);
 
       const $ = cheerio.load(pageHTML.data);
@@ -72,9 +69,9 @@ const WIKI_HERBS_LIST_URI =
       });
 
       saveParsedDataToJSON(parsedData);
+      logger.clearLine(2);
     }
   }
-
   logger.log(logger.progress.bar);
 })();
 
@@ -101,11 +98,11 @@ const saveParsedDataToJSON = (data) => {
   if (fs.e)
     fs.mkdir(dir, { recursive: false }, (err) => {
       if (err.code != "EEXIST") {
-        console.log(err);
+        return;
       }
     });
 
   fs.writeFile(file, stringifiedData, { flag: "w" }, (err) => {
-    console.log(err);
+    return;
   });
 };
